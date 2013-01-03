@@ -104,6 +104,31 @@ def staff():
     tablename = "hrm_human_resource"
     table = s3db[tablename]
 
+    s3db.add_component("pr_contact",
+                       hrm_human_resource=dict(name="email",
+                                               link="pr_person",
+                                               joinby="id",
+                                               key="pe_id",
+                                               fkey="pe_id",
+                                               pkey="person_id",
+                                               filterby="contact_method",
+                                               filterfor="EMAIL"
+                                              ) 
+                      )
+
+    s3db.add_component("pr_contact",
+                       hrm_human_resource=dict(name="phone",
+                                               link="pr_person",
+                                               joinby="id",
+                                               key="pe_id",
+                                               fkey="pe_id",
+                                               pkey="person_id",
+                                               filterby="contact_method",
+                                               filterfor="SMS"
+                                              ) 
+                      )
+
+
     _type = table.type
     _type.default = 1
     s3.filter = (_type == 1)
@@ -116,8 +141,8 @@ def staff():
                    "department_id",
                    "site_id",
                    #"site_contact",
-                   (T("Email"), "email"),
-                   (settings.get_ui_label_mobile_phone(), "phone"),
+                   (T("Email"),"email.value"),
+                   (settings.get_ui_label_mobile_phone(),"phone.value")
                    ]
     if settings.get_hrm_use_trainings():
         list_fields.append("person_id$training.course_id")

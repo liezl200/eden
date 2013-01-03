@@ -349,6 +349,9 @@ class S3Resource(object):
             @param alias: the alias
             @param hook: the hook
         """
+        
+        if alias is not None and hook.filterby is not None:
+            hook.table = hook.table.with_alias(alias)
 
         # Create as resource
         component = S3Resource(hook.table,
@@ -371,6 +374,8 @@ class S3Resource(object):
         component.alias = alias
         component.multiple = hook.multiple
         component.values = hook.values
+        component.filterby = hook.filterby
+        component.filterfor = hook.filterfor
 
         # Copy properties to the link
         if component.link is not None:
@@ -619,7 +624,11 @@ class S3Resource(object):
                 # belongs to is included in the SELECT
                 qtables.append(tname)
                 pkey = qtable._id
-                if not groupby:
+                # @todo - fix pkey of alias table to have the alias prefix
+                # if tname is an alias, do not include its primary key
+                if hasattr(qtable, '_ot') and qtable._ot != tname:
+                    pass 
+                elif not groupby:
                     qfields.append(pkey)
                 if str(field) == str(pkey):
                     continue
@@ -3407,7 +3416,6 @@ class S3Resource(object):
             rkey = self.rkey
             join = ((ltable[pkey] == linktable[lkey]) &
                     (linktable[rkey] == rtable[fkey]))
-
             if DELETED in linktable:
                 join = ((linktable[DELETED] != True) & join)
 
@@ -3415,6 +3423,9 @@ class S3Resource(object):
             join = (ltable[pkey] == rtable[fkey])
             if DELETED in rtable:
                 join &= (rtable[DELETED] != True)
+
+        if self.filterby is not None and self.filterfor is not None:
+            join &= (rtable[self.filterby] == self.filterfor)
 
         return join
 
@@ -3444,13 +3455,23 @@ class S3Resource(object):
             lquery = (ltable[pkey] == linktable[lkey])
             if DELETED in linktable:
                 lquery &= (linktable[DELETED] != True)
+
+            if self.filterby is not None and self.filterfor is not None:
+                rquery = (linktable[rkey] == rtable[fkey]) & (rtable[self.filterby] == self.filterfor)
+            else:    
+                rquery = (linktable[rkey] == rtable[fkey])
+                
             join = [linktable.on(lquery),
-                    rtable.on(linktable[rkey] == rtable[fkey])]
+                    rtable.on(rquery)] 
 
         else:
             lquery = (ltable[pkey] == rtable[fkey])
             if DELETED in rtable:
                 lquery &= (rtable[DELETED] != True)
+
+            if self.filterby is not None and self.filterfor is not None:
+                lquery &= (rtable[self.filterby] == self.filterfor)
+
             join = [rtable.on(lquery)]
 
         return join

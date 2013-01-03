@@ -345,8 +345,8 @@ class S3HRModel(S3Model):
                                             )
 
         # Email & Phone
-        # @ToDo: Replace with Filterable Components
-        table.virtualfields.append(HRMVirtualFields())
+        # Replace with Filterable Components - done hence commented out
+        #table.virtualfields.append(HRMVirtualFields())
 
         # Components
         # Availability
